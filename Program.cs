@@ -1,0 +1,54 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ContosoUniversity.Data;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ContosoUniversity
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            //CreateHostBuilder(args).Build().Run();
+
+            //tinfo200:[2021-03-15-pratiibh-dykstra1] - This comment is for the code block below (specifically lines 21-45).  This code block calls the Initializer class if the database does not exist.  Otherwise, the error is logged with lines 39-43 (catch statement for error handling).
+
+            var host = CreateHostBuilder(args).Build();
+
+            CreateDbIfNotExists(host);
+
+            host.Run();
+        }
+
+        private static void CreateDbIfNotExists(IHost host)
+        {
+            using (var scope = host.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var context = services.GetRequiredService<SchoolContext>();
+                    DbInitializer.Initialize(context);
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred creating the DB.");
+                }
+            }
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+    }
+}
